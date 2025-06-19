@@ -1,0 +1,614 @@
+<div class="main-content">
+    <h2 class="fw-bold">Dashboard</h2>
+    <div class="text-muted mb-4">Monitor and manage streaming links</div>
+    <div class="card mb-4">
+      <div class="card-body">
+        <form id="filterForm" class="form-row align-items-end">
+          <div class="col-md-3 col-12 mb-3">
+            <label class="form-label">League</label>
+            <select class="form-control" id="filterLeague">
+              <option value="">All Leagues</option>
+            </select>
+          </div>
+          <div class="col-md-6 col-12 mb-3">
+            <label class="form-label">Match</label>
+            <select class="form-control" id="filterMatch">
+              <option value="">All Matches</option>
+            </select>
+          </div>
+          <div class="col-md-3 col-12 mb-3">
+            <label class="form-label">Status</label>
+            <select class="form-control" id="filterStatus">
+              <option value="">All Statuses</option>
+              <option>Active</option>
+              <option>Inactive</option>
+              <option>Pending</option>
+            </select>
+          </div>
+        </form>
+        <div class="row mt-3 justify-content-center">
+          <div class="col-md-12 col-12 d-flex justify-content-center">
+            <button type="submit" class="btn btn-warning py-2 mx-2" form="filterForm" style="width: 200px;">Apply Filters</button>
+            <button class="btn btn-danger py-2 mx-2" type="button" id="addNewLinkBtn" style="width: 200px;">
+              <i class="bi bi-plus-lg mr-2"></i>Add New Ticket
+            </button>
+                <button class="btn btn-info py-2 mx-2" type="button" id="ExportBtn" style="width: 200px;">
+              <i class="bi bi-filetype-csv mr-2"></i>Export CSV
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <table class="table table-striped table-hover">
+          <thead>
+            <tr>
+              <th>Ticket Id</th>
+              <th>League</th>
+              <th>Match</th>
+              <th>URL</th>
+              <th>Screenshot</th>
+              <th>Status</th>
+              <th>Create Date</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="ticketsTableBody">
+            <tr>
+              <td colspan="8" class="text-center text-muted">Please apply filters to view tickets</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <div id="paginationInfo" class="text-muted"></div>
+          <nav aria-label="Page navigation">
+            <ul class="pagination" id="pagination">
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add New Link Modal -->
+<div class="modal fade" id="addLinkModal" tabindex="-1" role="dialog" aria-labelledby="addLinkModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addLinkModalLabel">Add New Ticket</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="addLinkForm">
+            <div class="form-group">
+              <label for="modalLeague">League</label>
+              <select class="form-control" id="modalLeague">
+                <option>Select League</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="modalMatch">Match</label>
+              <select class="form-control" id="modalMatch">
+                <option>Select Match</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="modalUrl">URL</label>
+              <input type="url" class="form-control" id="modalUrl" placeholder="https://example.com/stream">
+            </div>
+            <div class="form-group">
+              <label for="modalStatus">Status</label>
+              <select class="form-control" id="modalStatus">
+                <option>Pending</option>
+                <option>Active</option>
+                <option>Inactive</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="modalImageFile">Upload Screenshot</label>
+              <input type="file" class="form-control" id="modalImageFile" name="file" accept="image/*">
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="button" id="create_ticket" class="btn btn-warning">Create Ticket</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+<!-- Modal แสดงรูป -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="imageModalLabel">Screenshot</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+      </div>
+      <div class="modal-body text-center">
+        <img id="modalImage" src="" alt="Match Image" class="img-fluid" />
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal สำหรับอัพเดตสถานะ -->
+<div class="modal fade" id="statusUpdateModal" tabindex="-1" aria-labelledby="statusUpdateModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="statusUpdateForm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="statusUpdateModalLabel">Update Ticket Status</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="modalTicketId" name="ticketId" />
+          <div class="mb-3">
+            <label for="modalStatusSelect" class="form-label">Select new status</label>
+            <select class="form-select" id="modalStatusSelect" name="status" required>
+              <option value="activate">Activate</option>
+              <option value="inactivate">inactivate</option>
+              <option value="pending">Pending</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="button" id="update_status" class="btn btn-warning">Update Status</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/js/bootstrap.bundle.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.0/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css" rel="stylesheet">
+
+<script>
+// Global variables for pagination
+var currentPage = 1;
+var pageSize = 5;
+var totalRows = 0;
+var totalPages = 0;
+var allTicketsData = []; // เก็บข้อมูลทั้งหมดสำหรับ pagination
+
+// Pagination functions
+function updatePagination() {
+    totalRows = allTicketsData.length;
+    totalPages = Math.ceil(totalRows / pageSize);
+    
+    // แสดงข้อมูลสำหรับหน้าปัจจุบัน
+    displayCurrentPageData();
+    
+    // อัพเดท pagination controls
+    renderPaginationControls();
+    
+    // อัพเดท pagination info
+    updatePaginationInfo();
+}
+
+function displayCurrentPageData() {
+    const tbody = $("#ticketsTableBody");
+    tbody.empty();
+    
+    if (allTicketsData.length === 0) {
+        tbody.append(`<tr><td colspan="7" class="text-center text-muted">No tickets found</td></tr>`);
+        return;
+    }
+    
+    // คำนวณ index สำหรับหน้าปัจจุบัน
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    const currentPageData = allTicketsData.slice(start, end);
+    
+    // แสดงข้อมูลสำหรับหน้าปัจจุบัน
+    currentPageData.forEach(ticket => {
+      const row = `
+            <tr>
+                <td>${ticket.id}</td>
+                <td>${ticket.league.league_name}</td>
+                <td>${ticket.match.match_name} : ${ticket.match.match_date}</td>
+                <td><a href="${ticket.url}" target="_blank">${ticket.url}</a></td>
+                <td>
+                    <button class="btn btn-light btn-show-image" data-img="${ticket.image_path}">
+                        <i class="bi bi-camera"></i>
+                    </button>
+                </td>
+                <td><span class="badge ${getStatusClass(ticket.status)}">${capitalize(ticket.status)}</span></td>
+                <td>${formatDate(ticket.created_at)}</td>
+                <td>
+                    <button class="btn btn-link text-primary p-0 btn-status-change" data-ticket-id="${ticket.id}" data-current-status="${ticket.status}">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                </td>
+            </tr>
+            `;
+
+        tbody.append(row);
+    });
+}
+
+function renderPaginationControls() {
+    const $pagination = $('#pagination');
+    $pagination.empty();
+    
+    if (totalPages <= 1) {
+        return;
+    }
+    
+    // ปุ่ม Previous
+    const prevDisabled = currentPage === 1 ? 'disabled' : '';
+    $pagination.append(`
+        <li class="page-item ${prevDisabled}">
+            <a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a>
+        </li>
+    `);
+    
+    // หมายเลขหน้า
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
+    
+    // หน้าแรก
+    if (startPage > 1) {
+        $pagination.append(`
+            <li class="page-item">
+                <a class="page-link" href="#" data-page="1">1</a>
+            </li>
+        `);
+        if (startPage > 2) {
+            $pagination.append(`
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            `);
+        }
+    }
+    
+    // หน้าปัจจุบันและหน้าใกล้เคียง
+    for (let i = startPage; i <= endPage; i++) {
+        const active = i === currentPage ? 'active' : '';
+        $pagination.append(`
+            <li class="page-item ${active}">
+                <a class="page-link" href="#" data-page="${i}">${i}</a>
+            </li>
+        `);
+    }
+    
+    // หน้าสุดท้าย
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            $pagination.append(`
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            `);
+        }
+        $pagination.append(`
+            <li class="page-item">
+                <a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a>
+            </li>
+        `);
+    }
+    
+    // ปุ่ม Next
+    const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+    $pagination.append(`
+        <li class="page-item ${nextDisabled}">
+            <a class="page-link" href="#" data-page="${currentPage + 1}">Next</a>
+        </li>
+    `);
+}
+
+function updatePaginationInfo() {
+    const $info = $('#paginationInfo');
+    
+    if (totalRows === 0) {
+        $info.text('No entries found');
+        return;
+    }
+    
+    const start = (currentPage - 1) * pageSize + 1;
+    const end = Math.min(currentPage * pageSize, totalRows);
+    $info.text(`Showing ${start} to ${end} of ${totalRows} entries`);
+}
+
+function goToPage(page) {
+    if (page < 1 || page > totalPages || page === currentPage) return;
+    currentPage = page;
+    updatePagination();
+}
+
+// Helper functions
+function getStatusClass(status) {
+    switch (status.toLowerCase()) {
+        case "activate":
+            return "badge-danger";
+        case "inactivate":
+            return "badge-success";
+        case "pending":
+        default:
+            return "badge-warning";
+    }
+}
+
+function capitalize(text) {
+    if (!text) return "";
+    return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function formatDate(dateString) {
+    const d = new Date(dateString);
+    return d.toLocaleDateString("en-GB", {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+    });
+}
+
+// Load tickets data function
+function loadTicketsData() {
+    const token = localStorage.getItem("access_token");
+    const leagueId = $("#filterLeague").val();
+    const matchId = $("#filterMatch").val();
+    const status = $("#filterStatus").val();
+
+    // สร้าง query string
+    const params = new URLSearchParams();
+    if (leagueId) params.append("league_id", leagueId);
+    if (matchId) params.append("match_id", matchId);
+    if (status) params.append("status", status);
+
+    $.ajax({
+        url: "api/tickets/filter?" + params.toString(),
+        method: "GET",
+        headers: {
+            Authorization: "Bearer " + token
+        },
+        success: function (data) {
+            // เก็บข้อมูลทั้งหมดไว้ใน global variable
+            allTicketsData = data;
+            
+            // รีเซ็ตไปหน้าแรก
+            currentPage = 1;
+            
+            // อัพเดท pagination
+            updatePagination();
+        },
+        error: function (xhr) {
+            allTicketsData = [];
+            currentPage = 1;
+            updatePagination();
+            alert("Error loading tickets");
+        }
+    });
+}
+
+// Document ready functions
+$(document).ready(function() {
+    // Pagination click handler
+    $(document).on('click', '#pagination .page-link', function(e) {
+        e.preventDefault();
+        const page = parseInt($(this).data('page'));
+        if (!isNaN(page)) {
+            goToPage(page);
+        }
+    });
+    
+    // Modal Show
+    $('#addNewLinkBtn').on('click', function() {
+        $('#addLinkModal').modal('show');
+    });
+
+    // Filter Form Handler - เฉพาะตอนกด Apply Filters เท่านั้น
+    $("#filterForm").on("submit", function (e) {
+        e.preventDefault();
+        loadTicketsData();
+    });
+    
+    // Initialize pagination info (empty state)
+    updatePaginationInfo();
+});
+
+// Create Drop Down
+$(document).ready(function () {
+    const token = localStorage.getItem("access_token");
+    
+    $.ajax({
+        url: "/api/leagues",
+        method: "GET",
+        headers: {
+            Authorization: "Bearer " + token
+        },
+        success: function (data) {
+            const selects_league = $('#filterLeague, #modalLeague');
+            data.forEach(function (league) {
+                const option_league = `<option value="${league.id}">${league.league_name}</option>`;
+                selects_league.append(option_league);
+            });
+        },
+        error: function (xhr, status, error) {
+            console.error("Error loading leagues:", error);
+        }
+    });
+
+    $.ajax({
+        url: "/api/matches",
+        method: "GET",
+        headers: {
+            Authorization: "Bearer " + token
+        },
+        success: function (data) {
+            const selects_match = $('#filterMatch, #modalMatch');
+            data.forEach(function (match) {
+                const option_match = `<option value="${match.id}">${match.match_name} : ${match.match_date}</option>`;
+                selects_match.append(option_match);
+            });
+        },
+        error: function (xhr, status, error) {
+            console.error("Error loading matches:", error);
+        }
+    });
+
+    // เปิด modal แสดงรูปเมื่อกดปุ่มกล้อง
+    $(document).on("click", ".btn-show-image", function() {
+        const imgSrc = $(this).data("img");
+        $("#modalImage").attr("src", imgSrc);
+        $('#imageModal').modal('show');
+    });
+});
+
+// Create Ticket
+$(document).ready(function () {
+    $("#create_ticket").click(function () {
+        const token = localStorage.getItem("access_token");
+        const formData = new FormData();
+
+        // ดึงค่าจากฟอร์ม
+        formData.append("league_id", $("#modalLeague").val());
+        formData.append("match_id", $("#modalMatch").val());
+        formData.append("url", $("#modalUrl").val());
+        formData.append("status", $("#modalStatus").val());
+
+        // แนบรูปภาพ
+        const fileInput = $("#modalImageFile")[0];
+        if (fileInput.files.length > 0) {
+            formData.append("file", fileInput.files[0]);
+        } else {
+            alert("Please upload an image.");
+            return;
+        }
+
+        $.ajax({
+            url: "/api/tickets",
+            method: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                Authorization: "Bearer " + token
+            },
+            success: function (data) {
+                alert("Ticket created successfully!");
+                $("#addLinkModal").modal("hide");
+                $("#addLinkForm")[0].reset();
+                // รีเฟรชข้อมูลหลังเพิ่ม ticket ใหม่ (ถ้ามี filter อยู่)
+                if ($("#filterLeague").val() || $("#filterMatch").val() || $("#filterStatus").val()) {
+                    loadTicketsData();
+                }
+            },
+            error: function (xhr) {
+                const errorMsg = xhr.responseJSON?.detail || "Unknown error";
+                alert("Error: " + errorMsg);
+            }
+        });
+    });
+});
+
+// Export CSV
+$(document).ready(function () {
+    const token = localStorage.getItem("access_token");
+
+    $("#ExportBtn").click(function () {
+        const leagueId = $("#filterLeague").val();
+        const matchId = $("#filterMatch").val();
+        const status = $("#filterStatus").val();
+
+        const params = new URLSearchParams();
+        if (leagueId) params.append("league_id", leagueId);
+        if (matchId) params.append("match_id", matchId);
+        if (status) params.append("status", status);
+
+        $.ajax({
+            url: "/api/tickets/export/csv?" + params.toString(),
+            method: "GET",
+            headers: {
+                "Authorization": "Bearer " + token,
+                "Accept": "text/csv"
+            },
+            xhrFields: {
+                responseType: 'blob'
+            },
+            success: function (data) {
+                const blob = new Blob([data], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "tickets.csv";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            },
+            error: function (xhr, status, error) {
+                alert("Export failed: " + error);
+            }
+        });
+    });
+});
+
+$(document).on('click', '.btn-status-change', function() {
+    const ticketId = $(this).data('ticket-id');
+    const currentStatus = $(this).data('current-status');
+
+    $('#modalTicketId').val(ticketId);
+    $('#modalStatusSelect').val(currentStatus.toLowerCase());
+
+    const modal = new bootstrap.Modal(document.getElementById('statusUpdateModal'));
+    modal.show();
+});
+
+$(document).on("click", "#status-change", function () {
+    const row = $(this).closest("tr");
+    const ticketId = row.find("td:first").text().trim(); // ดึง ticket.id จาก column แรก
+    const statusText = row.find("span.badge").text().trim().toLowerCase(); // ดึง status
+
+    // ใส่ค่าใน modal
+    $("#modalTicketId").val(ticketId);
+    $("#modalStatusSelect").val(statusText);
+
+    // เปิด modal
+    $("#statusUpdateModal").modal("show");
+});
+
+$("#update_status").on("click", function () {
+    const ticketId = $("#modalTicketId").val();
+    const newStatus = $("#modalStatusSelect").val();
+    const token = localStorage.getItem("access_token");
+
+    if (!token) {
+        alert("Unauthorized: No token found");
+        return;
+    }
+
+    $.ajax({
+        url: `api/tickets/${ticketId}`,
+        method: "PATCH",
+        headers: {
+            "Authorization": "Bearer " + token,
+            "Content-Type": "application/json"
+        },
+        data: JSON.stringify({ status: newStatus }),
+        success: function (response) {
+            alert("Status updated!");
+            $("#statusUpdateModal").modal("hide");  // ปิด modal แบบ Bootstrap 4
+            loadTicketsData();  // รีเฟรชตาราง
+        },
+        error: function (xhr) {
+            alert("Error: " + xhr.responseText);
+        }
+    });
+});
+
+</script>

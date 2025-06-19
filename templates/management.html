@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Management - Fixed</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+
+<!-- Main Content -->
+<div class="main-content">
+  <h2 class="fw-bold">Management</h2>
+  <div class="text-muted mb-4">Manage Data Leagues and Matches</div>
+
+  <div class="card">
+    <div class="card-body">
+      <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
+        <li class="nav-item">
+          <a class="nav-link active" id="leagues-tab" data-toggle="tab" href="#leagues" role="tab">Leagues</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="matches-tab" data-toggle="tab" href="#matches" role="tab">Matches</a>
+        </li>
+      </ul>
+      <div class="tab-content" id="myTabContent">
+        <!-- Leagues Tab -->
+        <div class="tab-pane fade show active" id="leagues" role="tabpanel">
+          <h5>League Management</h5>
+          <button class="btn btn-primary mb-3" data-toggle="modal" data-target="#leagueModal">Add League</button>
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>League Id</th>
+                <th>League Name</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="leaguesTableBody"></tbody>
+          </table>
+          <div id="leaguesPagination" class="pagination mt-2"></div>
+        </div>
+
+        <!-- Matches Tab -->
+        <div class="tab-pane fade" id="matches" role="tabpanel">
+          <h5>Matches Management</h5>
+          <button class="btn btn-primary mb-3" data-toggle="modal" data-target="#matchModal">Add Match</button>
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Match Id</th>
+                <th>Match Name</th>
+                <th>Match Date</th>
+                <th>Match Year</th>
+                <th>League Name</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="matchesTableBody"></tbody>
+          </table>
+          <div id="matchesPagination" class="pagination mt-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- League Modal -->
+<div class="modal fade" id="leagueModal" tabindex="-1" role="dialog" aria-labelledby="leagueModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <form id="leagueForm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="leagueModalLabel">League</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="leagueId">
+          <div class="form-group">
+            <label for="leagueName">League Name</label>
+            <input type="text" class="form-control" id="leagueName" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Match Modal -->
+<div class="modal fade" id="matchModal" tabindex="-1" role="dialog" aria-labelledby="matchModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <form id="matchForm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="matchModalLabel">Match</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="matchId">
+          <div class="form-group">
+            <label for="matchName">Match Name</label>
+            <input type="text" class="form-control" id="matchName" required>
+          </div>
+          <div class="form-group">
+            <label for="matchDate">Match Date</label>
+            <input type="date" class="form-control" id="matchDate" required>
+          </div>
+          <div class="form-group">
+            <label for="matchYear">Match Year</label>
+            <input type="text" class="form-control" id="matchYear" required>
+          </div>
+          <div class="form-group">
+            <label for="matchLeague">League</label>
+            <select class="form-control" id="matchLeague" required>
+              <option disabled selected value="">-- Select League --</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+$(document).ready(function () {
+  const token = localStorage.getItem("access_token");
+  const leaguesData = [], matchesData = [];
+  let currentLeaguePage = 1, currentMatchPage = 1;
+  const rowsPerPage = 5;
+
+  // Function to properly close modal and remove backdrop
+  function closeModal(modalId) {
+    $(modalId).modal('hide');
+    // Force remove backdrop if still exists
+    setTimeout(function() {
+      $('.modal-backdrop').remove();
+      $('body').removeClass('modal-open');
+      $('body').css('padding-right', '');
+    }, 300);
+  }
+
+  function loadLeagueOptions() {
+    $.ajax({ 
+      url: "/api/leagues", 
+      method: "GET", 
+      headers: { Authorization: "Bearer " + token },
+      success: function (data) {
+        const $matchLeague = $('#matchLeague');
+        $matchLeague.empty().append(`<option disabled selected value="">-- Select League --</option>`);
+        data.forEach(league => $matchLeague.append(`<option value="${league.id}">${league.league_name}</option>`));
+      },
+      error: function(xhr, status, error) {
+        console.error('Error loading league options:', error);
+      }
+    });
+  }
+
+  function renderPagination(dataArray, currentPage, containerId, onPageChange) {
+    const totalPages = Math.ceil(dataArray.length / rowsPerPage);
+    const $container = $(containerId).empty();
+    if (totalPages <= 1) return;
+    $container.append(`
+      <button class="btn btn-sm btn-secondary me-1" ${currentPage === 1 ? 'disabled' : ''} onclick="${onPageChange}(${currentPage - 1})">Prev</button>
+      <span class="me-1">Page ${currentPage} of ${totalPages}</span>
+      <button class="btn btn-sm btn-secondary" ${currentPage === totalPages ? 'disabled' : ''} onclick="${onPageChange}(${currentPage + 1})">Next</button>
+    `);
+  }
+
+  window.renderLeaguesPage = function (page) {
+    currentLeaguePage = page;
+    const start = (page - 1) * rowsPerPage;
+    const paginatedData = leaguesData.slice(start, start + rowsPerPage);
+    $('#leaguesTableBody').empty();
+    paginatedData.forEach(l => {
+      $('#leaguesTableBody').append(`
+        <tr>
+          <td>${l.id}</td>
+          <td>${l.league_name}</td>
+          <td>
+            <button class="btn btn-sm btn-warning edit-league" data-id="${l.id}" data-name="${l.league_name}">Edit</button>
+          </td>
+        </tr>`);
+    });
+    renderPagination(leaguesData, page, "#leaguesPagination", "renderLeaguesPage");
+  }
+
+  window.renderMatchesPage = function (page) {
+    currentMatchPage = page;
+    const start = (page - 1) * rowsPerPage;
+    const paginatedData = matchesData.slice(start, start + rowsPerPage);
+    $('#matchesTableBody').empty();
+    paginatedData.forEach(m => {
+      // Handle different date formats
+      let displayDate = '';
+      let inputDate = '';
+      
+      if (m.match_date) {
+        if (m.match_date.includes('T')) {
+          // Format: 2025-06-18T12:00:00
+          inputDate = m.match_date.split('T')[0];
+        } else if (m.match_date.includes(' ')) {
+          // Format: 2025-06-18 12:00
+          inputDate = m.match_date.split(' ')[0];
+        } else {
+          // Format: 2025-06-18
+          inputDate = m.match_date;
+        }
+        
+        // Display date in Thai format
+        try {
+          displayDate = new Date(inputDate).toLocaleDateString('th-TH');
+        } catch (e) {
+          displayDate = inputDate; // fallback to original if parsing fails
+        }
+      }
+      
+      $('#matchesTableBody').append(`
+        <tr>
+          <td>${m.id}</td>
+          <td>${m.match_name}</td>
+          <td>${displayDate}</td>
+          <td>${m.match_year}</td>
+          <td>${m.league.league_name}</td>
+          <td>
+            <button class="btn btn-sm btn-warning edit-match" data-id="${m.id}" data-name="${m.match_name}" data-year="${m.match_year}" data-date="${inputDate}" data-league-id="${m.league.id}">Edit</button>
+          </td>
+        </tr>`);
+    });
+    renderPagination(matchesData, page, "#matchesPagination", "renderMatchesPage");
+  }
+
+  function loadLeagues() {
+    $.ajax({ 
+      url: "/api/leagues", 
+      method: "GET", 
+      headers: { Authorization: "Bearer " + token },
+      success: function (data) {
+        leaguesData.length = 0;
+        leaguesData.push(...data);
+        renderLeaguesPage(1);
+      },
+      error: function(xhr, status, error) {
+        console.error('Error loading leagues:', error);
+      }
+    });
+  }
+
+  function loadMatches() {
+    $.ajax({ 
+      url: "/api/matches", 
+      method: "GET", 
+      headers: { Authorization: "Bearer " + token },
+      success: function (data) {
+        matchesData.length = 0;
+        matchesData.push(...data);
+        renderMatchesPage(1);
+      },
+      error: function(xhr, status, error) {
+        console.error('Error loading matches:', error);
+      }
+    });
+  }
+
+  // Open Add League Modal
+  $(document).on('click', '[data-target="#leagueModal"]', function () {
+    $('#leagueForm')[0].reset();
+    $('#leagueId').val('');
+    $('#leagueModal').modal('show');
+  });
+
+  // Open Edit League Modal
+  $(document).on('click', '.edit-league', function () {
+    $('#leagueForm')[0].reset();
+    $('#leagueId').val($(this).data('id'));
+    $('#leagueName').val($(this).data('name'));
+    $('#leagueModal').modal('show');
+  });
+
+  // League Form Submit
+  $('#leagueForm').submit(function (e) {
+    e.preventDefault();
+    const id = $('#leagueId').val();
+    const payload = { league_name: $('#leagueName').val() };
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/leagues/${id}` : '/api/leagues';
+    
+    $.ajax({ 
+      url, 
+      method, 
+      headers: { Authorization: "Bearer " + token }, 
+      contentType: 'application/json', 
+      data: JSON.stringify(payload),
+      success: function () {
+        closeModal('#leagueModal');
+        loadLeagues();
+      },
+      error: function(xhr, status, error) {
+        console.error('Error saving league:', error);
+        alert('Error saving league. Please try again.');
+      }
+    });
+  });
+
+  // Open Add Match Modal
+  $(document).on('click', '[data-target="#matchModal"]', function () {
+    $('#matchForm')[0].reset();
+    $('#matchId').val('');
+    loadLeagueOptions();
+    $('#matchModal').modal('show');
+  });
+
+  // Open Edit Match Modal
+  $(document).on('click', '.edit-match', function () {
+    $('#matchForm')[0].reset();
+    $('#matchId').val($(this).data('id'));
+    $('#matchName').val($(this).data('name'));
+    $('#matchDate').val($(this).data('date'));
+    loadLeagueOptions();
+    $('#matchModal').modal('show');
+    setTimeout(() => $('#matchLeague').val($(this).data('league-id')), 300);
+  });
+
+  // Match Form Submit
+  $('#matchForm').submit(function (e) {
+    e.preventDefault();
+    const id = $('#matchId').val();
+    const matchDate = $('#matchDate').val(); // This is in YYYY-MM-DD format
+    const matchYear = matchDate ? new Date(matchDate).getFullYear() : new Date().getFullYear();
+    
+    const payload = {
+      match_name: $('#matchName').val(),
+      match_date: matchDate + 'T00:00:00.000Z', // Convert to ISO format
+      match_year: matchYear,
+      league_id: parseInt($('#matchLeague').val())
+    };
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/matches/${id}` : '/api/matches';
+    
+    $.ajax({ 
+      url, 
+      method, 
+      headers: { Authorization: "Bearer " + token }, 
+      contentType: 'application/json', 
+      data: JSON.stringify(payload),
+      success: function () {
+        closeModal('#matchModal');
+        loadMatches();
+      },
+      error: function(xhr, status, error) {
+        console.error('Error saving match:', error);
+        console.error('Response:', xhr.responseText);
+        alert('Error saving match. Please try again.');
+      }
+    });
+  });
+
+  // Initialize
+  loadLeagues();
+  loadMatches();
+  loadLeagueOptions();
+});
+</script>
+
+</body>
+</html>

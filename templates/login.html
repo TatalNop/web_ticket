@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stream Monitor - Admin Login</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f5f6fa;
+      min-height: 100vh;
+    }
+    .login-card {
+      max-width: 420px;
+      margin: 60px auto;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+      border-radius: 12px;
+      background: #fff;
+      padding: 2.5rem 2rem 2rem 2rem;
+    }
+    .top-bar {
+      background: #343a40;
+      color: #fff;
+      padding: 8px 0;
+      text-align: center;
+      font-size: 1rem;
+      letter-spacing: 1px;
+    }
+    .login-btn {
+      background: #ff9800;
+      border: none;
+    }
+    .login-btn:hover {
+      background: #fb8c00;
+    }
+    .form-control:focus {
+      box-shadow: 0 0 0 0.2rem rgba(255,152,0,.25);
+      border-color: #ff9800;
+    }
+    .login-icon {
+      margin-right: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container d-flex align-items-center justify-content-center" style="min-height: 90vh;">
+    <div class="login-card">
+      <h2 class="text-center mb-1">Stream Monitor</h2>
+      <div class="text-center text-muted mb-4" style="font-size: 1rem;">Ticket Admin Tool</div>
+      <form id="login-form">
+        <div class="form-group mb-3">
+          <input type="text" class="form-control" id="username" placeholder="admin" required>
+        </div>
+        <div class="form-group mb-3">
+          <input type="password" class="form-control" id="password" placeholder="********" required>
+        </div>
+        <button type="submit" class="btn login-btn w-100 mb-3">
+          <span class="login-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-lock-fill" viewBox="0 0 16 16"><path d="M8 1a3 3 0 0 0-3 3v3H4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2h-1V4a3 3 0 0 0-3-3zm-2 3a2 2 0 1 1 4 0v3H6V4zm-2 5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z"/></svg></span>
+          Login
+        </button>
+      </form>
+      <div class="text-center text-muted mt-2" style="font-size: 0.95rem;">
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script>
+    $("#login-form").submit(function (e) {
+        e.preventDefault();
+        const username = $("#username").val();
+        const password = $("#password").val();
+
+        $.ajax({
+            url: "/login",
+            method: "POST",
+            data: { username: username, password: password },
+            success: function (res) {
+                localStorage.setItem("access_token", res.access_token);
+                window.location.href = "/";
+            },
+            error: function () {
+                alert("Login failed!");
+            }
+        });
+    });
+  </script>
+</body>
+</html>
