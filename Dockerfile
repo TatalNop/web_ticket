@@ -14,6 +14,7 @@ COPY ./templates ./templates
 # เปิดพอร์ต 8000 ให้ container รองรับการเชื่อมต่อจากภายนอก
 EXPOSE 8000
 
+EXPOSE 8001
 # ปิด buffering เพื่อให้ log แสดงทันทีใน stdout
 ENV PYTHONUNBUFFERED=1
 

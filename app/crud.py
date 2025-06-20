@@ -133,6 +133,15 @@ def create_leagues(db: Session, league_name: str, ):
     db.refresh(league)
     return league
 
+def update_leagues(db: Session, league_id: int, league_name: str):
+    league = db.query(models.League).filter(models.League.id == league_id).first()
+    if not league:
+        raise HTTPException(status_code=400, detail="League not found")
+    league.league_name = league_name
+    db.commit()
+    db.refresh(league)
+    return league
+
 def get_matches(db: Session):
     return db.query(models.Match).all()
 
@@ -164,3 +173,19 @@ def create_match(db: Session, match_name: str, match_date: datetime, match_year:
     db.refresh(match)
     return match
 
+def update_match(db: Session, match_id: int ,match_name: str, match_date: datetime, match_year: int, league_id: int):
+    db_match = db.query(models.Match).filter(
+        models.Match.id == match_id
+    ).first()
+
+    if not db_match:
+        raise HTTPException(status_code=400, detail="Match not found")
+    
+    db_match.match_name=match_name
+    db_match.match_date=match_date
+    db_match.league_id=league_id
+    db_match.match_year=match_year
+
+    db.commit()
+    db.refresh(db_match)
+    return db_match

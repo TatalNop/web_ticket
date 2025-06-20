@@ -22,6 +22,14 @@ def create_leagues(
     leagues = crud.create_leagues(db,league_data.league_name)
     return leagues
 
+@router.put("/leagues/{league_id}", response_model=schemas.LeagueOut)
+def put_leagues(league_id: int,
+                league_data: schemas.LeagueIn,
+                current_user: models.User = Depends(auth.get_current_active_user),
+                db: Session = Depends(database.get_db)):
+    leagues = crud.update_leagues(db,league_id,league_data.league_name)
+    return leagues
+
 @router.get("/matches", response_model=List[schemas.MatchOut])
 def get_matches(
     current_user: models.User = Depends(auth.get_current_active_user),
@@ -43,3 +51,20 @@ def create_matches(
                                 match_create.league_id
                                 )
     return matches
+
+@router.put("/matches/{match_id}", response_model=schemas.MatchOut)
+def put_matches(
+    match_id: int,
+    match_update: schemas.MatchIn,
+    current_user: models.User = Depends(auth.get_current_active_user),
+    db: Session = Depends(database.get_db),
+):
+    matches = crud.update_match(db,
+                            match_id,
+                            match_update.match_name,
+                            match_update.match_date,
+                            match_update.match_year,
+                            match_update.league_id
+                            )
+    return matches
+    

@@ -564,9 +564,7 @@ $(document).on('click', '.btn-status-change', function() {
 
     $('#modalTicketId').val(ticketId);
     $('#modalStatusSelect').val(currentStatus.toLowerCase());
-
-    const modal = new bootstrap.Modal(document.getElementById('statusUpdateModal'));
-    modal.show();
+    $('#statusUpdateModal').modal('show');
 });
 
 $(document).on("click", "#status-change", function () {

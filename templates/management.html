@@ -1,15 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Management - Fixed</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.2/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.2/js/bootstrap.bundle.min.js"></script>
-</head>
-<body>
-
 <!-- Main Content -->
 <div class="main-content">
   <h2 class="fw-bold">Management</h2>
@@ -111,13 +99,11 @@
             <label for="matchName">Match Name</label>
             <input type="text" class="form-control" id="matchName" required>
           </div>
-          <div class="form-group">
-            <label for="matchDate">Match Date</label>
-            <input type="date" class="form-control" id="matchDate" required>
-          </div>
-          <div class="form-group">
-            <label for="matchYear">Match Year</label>
-            <input type="text" class="form-control" id="matchYear" required>
+          <div class="input-group date" id="matchDatePicker" data-target-input="nearest">
+            <input type="text" id="matchDate" class="form-control datetimepicker-input" data-target="#matchDatePicker" required />
+            <div class="input-group-append" data-target="#matchDatePicker" data-toggle="datetimepicker">
+              <div class="input-group-text"><i class="fa fa-calendar-alt"></i></div>
+            </div>
           </div>
           <div class="form-group">
             <label for="matchLeague">League</label>
@@ -134,9 +120,18 @@
     </form>
   </div>
 </div>
-
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.39.0/js/tempusdominus-bootstrap-4.min.js"
+  ></script>
 <script>
 $(document).ready(function () {
+  $('#matchDatePicker').datetimepicker({
+    format: 'YYYY-MM-DD HH:mm',
+    icons: {
+          time: 'far fa-clock'
+    }
+  });
+
   const token = localStorage.getItem("access_token");
   const leaguesData = [], matchesData = [];
   let currentLeaguePage = 1, currentMatchPage = 1;
@@ -204,10 +199,10 @@ $(document).ready(function () {
     const paginatedData = matchesData.slice(start, start + rowsPerPage);
     $('#matchesTableBody').empty();
     paginatedData.forEach(m => {
+      /*
       // Handle different date formats
       let displayDate = '';
       let inputDate = '';
-      
       if (m.match_date) {
         if (m.match_date.includes('T')) {
           // Format: 2025-06-18T12:00:00
@@ -227,16 +222,16 @@ $(document).ready(function () {
           displayDate = inputDate; // fallback to original if parsing fails
         }
       }
-      
+      */
       $('#matchesTableBody').append(`
         <tr>
           <td>${m.id}</td>
           <td>${m.match_name}</td>
-          <td>${displayDate}</td>
+          <td>${m.match_date}</td>
           <td>${m.match_year}</td>
           <td>${m.league.league_name}</td>
           <td>
-            <button class="btn btn-sm btn-warning edit-match" data-id="${m.id}" data-name="${m.match_name}" data-year="${m.match_year}" data-date="${inputDate}" data-league-id="${m.league.id}">Edit</button>
+            <button class="btn btn-sm btn-warning edit-match" data-id="${m.id}" data-name="${m.match_name}" data-year="${m.match_year}" data-date="${m.match_date}" data-league-id="${m.league.id}">Edit</button>
           </td>
         </tr>`);
     });
@@ -328,7 +323,11 @@ $(document).ready(function () {
     $('#matchForm')[0].reset();
     $('#matchId').val($(this).data('id'));
     $('#matchName').val($(this).data('name'));
-    $('#matchDate').val($(this).data('date'));
+    
+    const matchDateStr = $(this).data('date'); // string เช่น "2025-06-20T15:00:00"
+    const momentDate = moment(matchDateStr);   // แปลงเป็น moment
+    $('#matchDatePicker').datetimepicker('date', momentDate); // set ให้ widget
+
     loadLeagueOptions();
     $('#matchModal').modal('show');
     setTimeout(() => $('#matchLeague').val($(this).data('league-id')), 300);
@@ -338,13 +337,15 @@ $(document).ready(function () {
   $('#matchForm').submit(function (e) {
     e.preventDefault();
     const id = $('#matchId').val();
-    const matchDate = $('#matchDate').val(); // This is in YYYY-MM-DD format
-    const matchYear = matchDate ? new Date(matchDate).getFullYear() : new Date().getFullYear();
+    //const matchDate = $('#matchDate').val(); // This is in YYYY-MM-DD format
+    //const matchYear = matchDate ? new Date(matchDate).getFullYear() : new Date().getFullYear();
+    const matchDateTime = $('#matchDatePicker').data('datetimepicker').date();
     
     const payload = {
       match_name: $('#matchName').val(),
-      match_date: matchDate + 'T00:00:00.000Z', // Convert to ISO format
-      match_year: matchYear,
+      //match_date: matchDate + 'T00:00:00.000Z', // Convert to ISO format
+      match_date: matchDateTime ? matchDateTime.toISOString() : null,
+      match_year: matchDateTime ? matchDateTime.year() : new Date().getFullYear(),
       league_id: parseInt($('#matchLeague').val())
     };
     const method = id ? 'PUT' : 'POST';
