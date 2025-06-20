@@ -1,5 +1,5 @@
 <!-- Main Content -->
-<div class="main-content">
+<main class="main-content">
   <h2 class="fw-bold">Management</h2>
   <div class="text-muted mb-4">Manage Data Leagues and Matches</div>
 
@@ -53,7 +53,7 @@
       </div>
     </div>
   </div>
-</div>
+</main>
 
 <!-- League Modal -->
 <div class="modal fade" id="leagueModal" tabindex="-1" role="dialog" aria-labelledby="leagueModalLabel" aria-hidden="true">
@@ -120,16 +120,22 @@
     </form>
   </div>
 </div>
-  <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.39.0/js/tempusdominus-bootstrap-4.min.js"
-  ></script>
+
+<!-- jQuery -->
+<script src="static/js/jquery-3.6.0.min.js"></script>
+<!-- Popper (Bootstrap 4 dependency) -->
+<script src="static/js/popper.min.js"></script>
+<!-- Bootstrap 4 JS -->
+<script src="static/js/bootstrap.min.js"></script>
+<!-- moment.js -->
+<script src="static/js/moment.js"></script>
+<!-- Tempus Dominus -->
+<script src="static/js/tempusdominus-bootstrap-4.min.js"></script>
 <script>
-$(document).ready(function () {
+$(function () {
   $('#matchDatePicker').datetimepicker({
     format: 'YYYY-MM-DD HH:mm',
-    icons: {
-          time: 'far fa-clock'
-    }
+    icons: { time: 'far fa-clock' }
   });
 
   const token = localStorage.getItem("access_token");
@@ -137,57 +143,50 @@ $(document).ready(function () {
   let currentLeaguePage = 1, currentMatchPage = 1;
   const rowsPerPage = 5;
 
-  // Function to properly close modal and remove backdrop
   function closeModal(modalId) {
     $(modalId).modal('hide');
-    // Force remove backdrop if still exists
-    setTimeout(function() {
+    setTimeout(() => {
       $('.modal-backdrop').remove();
-      $('body').removeClass('modal-open');
-      $('body').css('padding-right', '');
+      $('body').removeClass('modal-open').css('padding-right', '');
     }, 300);
   }
 
   function loadLeagueOptions() {
-    $.ajax({ 
-      url: "/api/leagues", 
-      method: "GET", 
+    $.ajax({
+      url: "/api/leagues",
+      method: "GET",
       headers: { Authorization: "Bearer " + token },
-      success: function (data) {
+      success: data => {
         const $matchLeague = $('#matchLeague');
         $matchLeague.empty().append(`<option disabled selected value="">-- Select League --</option>`);
-        data.forEach(league => $matchLeague.append(`<option value="${league.id}">${league.league_name}</option>`));
+        data.forEach(l => $matchLeague.append(`<option value="${l.id}">${l.league_name}</option>`));
       },
-      error: function(xhr, status, error) {
-        console.error('Error loading league options:', error);
-      }
+      error: (xhr, status, error) => console.error('Error loading league options:', error)
     });
   }
 
-  function renderPagination(dataArray, currentPage, containerId, onPageChange) {
-    const totalPages = Math.ceil(dataArray.length / rowsPerPage);
+  function renderPagination(data, page, containerId, onPageChange) {
+    const totalPages = Math.ceil(data.length / rowsPerPage);
     const $container = $(containerId).empty();
     if (totalPages <= 1) return;
     $container.append(`
-      <button class="btn btn-sm btn-secondary me-1" ${currentPage === 1 ? 'disabled' : ''} onclick="${onPageChange}(${currentPage - 1})">Prev</button>
-      <span class="me-1">Page ${currentPage} of ${totalPages}</span>
-      <button class="btn btn-sm btn-secondary" ${currentPage === totalPages ? 'disabled' : ''} onclick="${onPageChange}(${currentPage + 1})">Next</button>
+      <button class="btn btn-sm btn-secondary me-1" ${page === 1 ? 'disabled' : ''} onclick="${onPageChange}(${page - 1})">Prev</button>
+      <span class="me-1">Page ${page} of ${totalPages}</span>
+      <button class="btn btn-sm btn-secondary" ${page === totalPages ? 'disabled' : ''} onclick="${onPageChange}(${page + 1})">Next</button>
     `);
   }
 
   window.renderLeaguesPage = function (page) {
     currentLeaguePage = page;
     const start = (page - 1) * rowsPerPage;
-    const paginatedData = leaguesData.slice(start, start + rowsPerPage);
+    const paginated = leaguesData.slice(start, start + rowsPerPage);
     $('#leaguesTableBody').empty();
-    paginatedData.forEach(l => {
+    paginated.forEach(l => {
       $('#leaguesTableBody').append(`
         <tr>
           <td>${l.id}</td>
           <td>${l.league_name}</td>
-          <td>
-            <button class="btn btn-sm btn-warning edit-league" data-id="${l.id}" data-name="${l.league_name}">Edit</button>
-          </td>
+          <td><button class="btn btn-sm btn-warning edit-league" data-id="${l.id}" data-name="${l.league_name}">Edit</button></td>
         </tr>`);
     });
     renderPagination(leaguesData, page, "#leaguesPagination", "renderLeaguesPage");
@@ -196,33 +195,9 @@ $(document).ready(function () {
   window.renderMatchesPage = function (page) {
     currentMatchPage = page;
     const start = (page - 1) * rowsPerPage;
-    const paginatedData = matchesData.slice(start, start + rowsPerPage);
+    const paginated = matchesData.slice(start, start + rowsPerPage);
     $('#matchesTableBody').empty();
-    paginatedData.forEach(m => {
-      /*
-      // Handle different date formats
-      let displayDate = '';
-      let inputDate = '';
-      if (m.match_date) {
-        if (m.match_date.includes('T')) {
-          // Format: 2025-06-18T12:00:00
-          inputDate = m.match_date.split('T')[0];
-        } else if (m.match_date.includes(' ')) {
-          // Format: 2025-06-18 12:00
-          inputDate = m.match_date.split(' ')[0];
-        } else {
-          // Format: 2025-06-18
-          inputDate = m.match_date;
-        }
-        
-        // Display date in Thai format
-        try {
-          displayDate = new Date(inputDate).toLocaleDateString('th-TH');
-        } catch (e) {
-          displayDate = inputDate; // fallback to original if parsing fails
-        }
-      }
-      */
+    paginated.forEach(m => {
       $('#matchesTableBody').append(`
         <tr>
           <td>${m.id}</td>
@@ -230,151 +205,110 @@ $(document).ready(function () {
           <td>${m.match_date}</td>
           <td>${m.match_year}</td>
           <td>${m.league.league_name}</td>
-          <td>
-            <button class="btn btn-sm btn-warning edit-match" data-id="${m.id}" data-name="${m.match_name}" data-year="${m.match_year}" data-date="${m.match_date}" data-league-id="${m.league.id}">Edit</button>
-          </td>
+          <td><button class="btn btn-sm btn-warning edit-match" data-id="${m.id}" data-name="${m.match_name}" data-year="${m.match_year}" data-date="${m.match_date}" data-league-id="${m.league.id}">Edit</button></td>
         </tr>`);
     });
     renderPagination(matchesData, page, "#matchesPagination", "renderMatchesPage");
   }
 
   function loadLeagues() {
-    $.ajax({ 
-      url: "/api/leagues", 
-      method: "GET", 
+    $.ajax({
+      url: "/api/leagues",
+      method: "GET",
       headers: { Authorization: "Bearer " + token },
-      success: function (data) {
+      success: data => {
         leaguesData.length = 0;
         leaguesData.push(...data);
         renderLeaguesPage(1);
       },
-      error: function(xhr, status, error) {
-        console.error('Error loading leagues:', error);
-      }
+      error: (xhr, status, error) => console.error('Error loading leagues:', error)
     });
   }
 
   function loadMatches() {
-    $.ajax({ 
-      url: "/api/matches", 
-      method: "GET", 
+    $.ajax({
+      url: "/api/matches",
+      method: "GET",
       headers: { Authorization: "Bearer " + token },
-      success: function (data) {
+      success: data => {
         matchesData.length = 0;
         matchesData.push(...data);
         renderMatchesPage(1);
       },
-      error: function(xhr, status, error) {
-        console.error('Error loading matches:', error);
-      }
+      error: (xhr, status, error) => console.error('Error loading matches:', error)
     });
   }
 
-  // Open Add League Modal
-  $(document).on('click', '[data-target="#leagueModal"]', function () {
+  // Modal events
+  $(document).on('click', '[data-target="#leagueModal"]', () => {
     $('#leagueForm')[0].reset();
     $('#leagueId').val('');
     $('#leagueModal').modal('show');
   });
-
-  // Open Edit League Modal
   $(document).on('click', '.edit-league', function () {
     $('#leagueForm')[0].reset();
     $('#leagueId').val($(this).data('id'));
     $('#leagueName').val($(this).data('name'));
     $('#leagueModal').modal('show');
   });
-
-  // League Form Submit
   $('#leagueForm').submit(function (e) {
     e.preventDefault();
     const id = $('#leagueId').val();
     const payload = { league_name: $('#leagueName').val() };
     const method = id ? 'PUT' : 'POST';
     const url = id ? `/api/leagues/${id}` : '/api/leagues';
-    
-    $.ajax({ 
-      url, 
-      method, 
-      headers: { Authorization: "Bearer " + token }, 
-      contentType: 'application/json', 
+    $.ajax({
+      url, method,
+      headers: { Authorization: "Bearer " + token },
+      contentType: 'application/json',
       data: JSON.stringify(payload),
-      success: function () {
-        closeModal('#leagueModal');
-        loadLeagues();
-      },
-      error: function(xhr, status, error) {
-        console.error('Error saving league:', error);
-        alert('Error saving league. Please try again.');
-      }
+      success: () => { closeModal('#leagueModal'); loadLeagues(); },
+      error: (xhr, status, error) => { console.error('Error saving league:', error); alert('Error saving league. Please try again.'); }
     });
   });
-
-  // Open Add Match Modal
-  $(document).on('click', '[data-target="#matchModal"]', function () {
+  $(document).on('click', '[data-target="#matchModal"]', () => {
     $('#matchForm')[0].reset();
     $('#matchId').val('');
     loadLeagueOptions();
     $('#matchModal').modal('show');
   });
-
-  // Open Edit Match Modal
   $(document).on('click', '.edit-match', function () {
     $('#matchForm')[0].reset();
     $('#matchId').val($(this).data('id'));
     $('#matchName').val($(this).data('name'));
-    
-    const matchDateStr = $(this).data('date'); // string เช่น "2025-06-20T15:00:00"
-    const momentDate = moment(matchDateStr);   // แปลงเป็น moment
-    $('#matchDatePicker').datetimepicker('date', momentDate); // set ให้ widget
-
+    const matchDateStr = $(this).data('date');
+    const momentDate = moment(matchDateStr);
+    $('#matchDatePicker').datetimepicker('date', momentDate);
     loadLeagueOptions();
     $('#matchModal').modal('show');
     setTimeout(() => $('#matchLeague').val($(this).data('league-id')), 300);
   });
-
-  // Match Form Submit
   $('#matchForm').submit(function (e) {
     e.preventDefault();
     const id = $('#matchId').val();
-    //const matchDate = $('#matchDate').val(); // This is in YYYY-MM-DD format
-    //const matchYear = matchDate ? new Date(matchDate).getFullYear() : new Date().getFullYear();
     const matchDateTime = $('#matchDatePicker').data('datetimepicker').date();
-    
     const payload = {
       match_name: $('#matchName').val(),
-      //match_date: matchDate + 'T00:00:00.000Z', // Convert to ISO format
-      match_date: matchDateTime ? matchDateTime.toISOString() : null,
+      match_date: matchDateTime ? matchDateTime.format("YYYY-MM-DD HH:mm") : null,
       match_year: matchDateTime ? matchDateTime.year() : new Date().getFullYear(),
       league_id: parseInt($('#matchLeague').val())
     };
     const method = id ? 'PUT' : 'POST';
     const url = id ? `/api/matches/${id}` : '/api/matches';
-    
-    $.ajax({ 
-      url, 
-      method, 
-      headers: { Authorization: "Bearer " + token }, 
-      contentType: 'application/json', 
+    $.ajax({
+      url, method,
+      headers: { Authorization: "Bearer " + token },
+      contentType: 'application/json',
       data: JSON.stringify(payload),
-      success: function () {
-        closeModal('#matchModal');
-        loadMatches();
-      },
-      error: function(xhr, status, error) {
-        console.error('Error saving match:', error);
-        console.error('Response:', xhr.responseText);
-        alert('Error saving match. Please try again.');
-      }
+      success: () => { closeModal('#matchModal'); loadMatches(); },
+      error: (xhr, status, error) => { console.error('Error saving match:', error); alert('Error saving match. Please try again.'); }
     });
   });
-
   // Initialize
   loadLeagues();
   loadMatches();
   loadLeagueOptions();
 });
 </script>
-
 </body>
 </html>

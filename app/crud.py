@@ -115,7 +115,7 @@ def get_tickets_filtered(
     return query.all()
 
 def get_leagues(db: Session):
-    return db.query(models.League).all()
+    return db.query(models.League).order_by(models.League.id.asc()).all()
 
 def get_leagues_by_name(db: Session, league_name):
     return db.query(models.League).filter(models.League.league_name == league_name).first()
